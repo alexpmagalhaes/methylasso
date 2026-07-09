@@ -68,6 +68,7 @@ help <- function(){
   cat(" --tol_val\t\tTolerance value for optimization (default 0.01)\n")
   cat(" --pmd_lambda2\t\tSegmentation value for PMD identification (default 1000)\n")
   cat(" --pmd_std_threshold\tStandard deviation threshold for PMD (default 0.15)\n")
+  cat(" --hmr_min_beta\tMinimum mean methylation for HMRs (default 0.8)\n")
   cat(" --umr_std_threshold\tStandard deviation threshold for UMR (default 0.1)\n")
   cat(" --umr_max_beta\t\tMaximum methylation for UMR (default 0.1)\n")
   cat(" --lmr_max_beta\t\tMaximum methylation for LMR (default 0.5)\n")
@@ -112,6 +113,7 @@ quiet = FALSE # Do not print processing information
 umrlmr_lambda2 = 25 # Segmentation value for UMR/LMR identification
 tol_val = 0.01 # Tolerance value for optimization
 pmd_lambda2 = 1000 # Segmentation value for PMD identification
+hmr_min_beta = 0.8 # Minimum mean methylation for HMR
 pmd_std_threshold = 0.15 # Standard deviation threshold for PMD
 umr_std_threshold = 0.1 # Standard deviation threshold for UMR
 umr_max_beta = 0.1 # Maximum mean methylation for UMR
@@ -157,6 +159,7 @@ q = as.numeric(q)
 r = as.numeric(r)
 umrlmr_lambda2 = as.numeric(umrlmr_lambda2)
 tol_val = as.numeric(tol_val)
+hmr_min_beta = as.numeric(hmr_min_beta)
 pmd_lambda2 = as.numeric(pmd_lambda2)
 pmd_std_threshold = as.numeric(pmd_std_threshold)
 umr_std_threshold = as.numeric(umr_std_threshold)
@@ -378,7 +381,8 @@ if (isFALSE(s) && exists("c1") && exists("c2")) {
     message("\nStep 2: Segmentation and identification of PMDs, LMRs, UMRs and DMVs\n")
   }
   
-  segments <- MethyLasso:::segment_methylation(data, ret, ncores = t, pmd_max_beta = m, min_num_cpgs = n, 
+  segments <- MethyLasso:::segment_methylation(data, ret, ncores = t, pmd_max_beta = m, hmr_min_beta = hmr_min_beta,
+                                               min_num_cpgs = n, 
                                                pmd_lambda2 = pmd_lambda2, pmd_std_threshold = pmd_std_threshold, 
                                                umr_std_threshold = umr_std_threshold, umr_max_beta = umr_max_beta, 
                                                lmr_max_beta = lmr_max_beta, valley_max_beta = valley_max_beta, 
@@ -391,7 +395,7 @@ if (isFALSE(s) && exists("c1") && exists("c2")) {
   invisible(gc())
   
   #to obtain all segments for plot
-  seg <- MethyLasso:::segment_methylation(data, ret, ncores = t, pmd_max_beta = 1, pmd_std_threshold = 0, 
+  seg <- MethyLasso:::segment_methylation(data, ret, ncores = t, pmd_max_beta = 1, pmd_std_threshold = 0, hmr_min_beta = hmr_min_beta, 
                                           min_num_cpgs = n, pmd_lambda2 = pmd_lambda2, umr_std_threshold = umr_std_threshold,
                                           umr_max_beta = umr_max_beta, lmr_max_beta = lmr_max_beta, 
                                           valley_max_beta = valley_max_beta, pmd_valley_min_width = pmd_valley_min_width, 
@@ -565,7 +569,7 @@ if (isFALSE(s) && exists("c1") && exists("c2")) {
     message("\nStep 2: Segmentation and identification of PMDs, LMRs, UMRs and DMVs\n")
   }
   show_memory_usage("Before Step 2: Segmentation")  # Added memory check
-  segments <- MethyLasso:::segment_methylation(data, ret, ncores = t, pmd_max_beta = m, min_num_cpgs = n, 
+  segments <- MethyLasso:::segment_methylation(data, ret, ncores = t, pmd_max_beta = m, min_num_cpgs = n, hmr_min_beta = hmr_min_beta, 
                                                pmd_lambda2 = pmd_lambda2, pmd_std_threshold = pmd_std_threshold, 
                                                umr_std_threshold = umr_std_threshold, umr_max_beta = umr_max_beta, 
                                                lmr_max_beta = lmr_max_beta, valley_max_beta = valley_max_beta, 
@@ -579,7 +583,7 @@ if (isFALSE(s) && exists("c1") && exists("c2")) {
   show_memory_usage("After Step 2: Segmentation")  # Added memory check
   
   #to obtain all segments for plot
-  seg <- MethyLasso:::segment_methylation(data, ret, ncores = t, pmd_max_beta = 1, pmd_std_threshold = 0, 
+  seg <- MethyLasso:::segment_methylation(data, ret, ncores = t, pmd_max_beta = 1, pmd_std_threshold = 0, hmr_min_beta = hmr_min_beta, 
                                           min_num_cpgs = n, pmd_lambda2 = pmd_lambda2, umr_std_threshold = umr_std_threshold,
                                           umr_max_beta = umr_max_beta, lmr_max_beta = lmr_max_beta, 
                                           valley_max_beta = valley_max_beta, pmd_valley_min_width = pmd_valley_min_width, 
