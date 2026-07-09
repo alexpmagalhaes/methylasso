@@ -387,26 +387,38 @@ annotate_regions = function(regions, segments, min.overlap.pc=10) {
   ov2=ov2[,.(condition,chr,segment_id,pmd.pc=overlap.pc)]
   regions=ov2[regions,,on=c("condition","chr","segment_id")]
   regions[is.na(pmd.pc),pmd.pc:=0]
+
+  #compute HMR% for each difference
+  hmr_call=segments$pmd[category=="HMR",.(condition,chr,start,end,category)]
+  setkey(hmr_call,condition,chr,start,end)
+  ov3 = foverlaps(regions[,.(condition,chr,start,end,segment_id,diff.width=width-1)], hmr_call[,.(condition,chr,start,end,category)],nomatch=NULL,mult="all")
+  ov3[,overlap:=pmin(end,i.end)-pmax(start,i.start)]
+  ov3=ov3[,.(overlap=sum(overlap)),keyby=c("condition","chr","segment_id","diff.width")]
+  ov3[,overlap.pc:=100*overlap/diff.width]
+  ov3=ov3[,.(condition,chr,segment_id,hmr.pc=overlap.pc)]
+  regions=ov3[regions,,on=c("condition","chr","segment_id")]
+  regions[is.na(hmr.pc),hmr.pc:=0]
+
   #find overlaps with UMR/LMR/Valley
   sig_call=segments$lmr_umr_valley[!is.na(category),.(condition,chr,start,end,category)]
   setkey(sig_call,condition,chr,start,end)
-  ov = foverlaps(regions[,.(condition,chr,start,end,segment_id,diff.width=width-1,pmd.pc)],
+  ov = foverlaps(regions[,.(condition,chr,start,end,segment_id,diff.width=width-1,pmd.pc,hmr.pc)],
                  sig_call[,.(condition,chr,start,end,category)],
                  nomatch=NA,mult="all")
   #count number of UMRs/LMRs which overlap
   ov[,c("num.UMR","num.LMR"):=list(sum(grepl("UMR",category)),sum(grepl("LMR",category))),by=c("condition","chr","segment_id")]
   #count which type of segment overlaps most with that difference, and keep largest overlap
-  #annotate non-overlapping segments as "other" or "PMD" based on pmd.pc
+  #annotate non-overlapping segments as "other", "PMD" or "HMR" based on pmd.pc/hmr.pc
   ov[,overlap:=pmin(end,i.end)-pmax(start,i.start)]
   ov[is.na(overlap),overlap:=0]
-  ov[is.na(category),category:=ifelse(pmd.pc<50,"other","PMD")]
-  ov=ov[,.(overlap=sum(overlap)),keyby=c("condition","chr","segment_id","diff.width","num.UMR","num.LMR","category","pmd.pc")]
+  ov[is.na(category),category:=ifelse(pmd.pc>=50,"PMD",ifelse(hmr.pc>=50,"HMR","other"))]
+  ov=ov[,.(overlap=sum(overlap)),keyby=c("condition","chr","segment_id","diff.width","num.UMR","num.LMR","category","pmd.pc","hmr.pc")]
   ov[,overlap.pc:=100*overlap/diff.width]
   setkeyv(ov,c("condition","chr","segment_id","overlap.pc"))
   ov[,overlap.id:=seq.int(.N,1),by=c("condition","chr","segment_id")]
   ov=ov[overlap.id==1]
-  #differences which have no big overlap with any segment are classified as "other" or "PMD"
-  ov[overlap.pc<min.overlap.pc,category:=ifelse(pmd.pc<50,"other","PMD")]
+  #differences which have no big overlap with any segment are classified as "other", "PMD" or "HMR"
+  ov[overlap.pc<min.overlap.pc,category:=ifelse(pmd.pc>=50,"PMD",ifelse(hmr.pc>=50,"HMR","other"))]
   ov=ov[,.(condition,chr,segment_id,category,num.UMR,num.LMR)]
   return(ov)
 }
