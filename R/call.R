@@ -11,6 +11,7 @@ NULL
 #' @param umr_max_beta segments with mean methylation below this threshold are UMRs (default 0.1)
 #' @param lmr_max_beta segments with mean methylation below this threshold (default 0.5) and above umr_max_beta are LMRs
 #' @param pmd_max_beta the maximum methylation value a segment group can have to be considered a PMD (default 0.70)
+#' @param hmr_min_beta the minimum methylation value a segment group can have to be considered a HMR (default 0.80)
 #' @param valley_max_beta Valleys must have mean methylation below this threshold (default 0.1)
 #' @param pmd_valley_min_width Valleys and PMDs must have at least this size (default 5000)
 #' @param max_distance Within a segment, the distance between successive CpGs must never be larger than this distance,
@@ -29,7 +30,7 @@ NULL
 #' @param tol_val fused values below tol_val from each other are considered equal (default 0.01)
 #' 
 segment_methylation_singlechr = function(data, ret, pmd_lambda2=1000, pmd_std_threshold=0.15, umr_std_threshold=0.1,
-                                         umr_max_beta=0.1, lmr_max_beta=0.5, pmd_max_beta=0.75, valley_max_beta=0.1, pmd_valley_min_width=5000,
+                                         umr_max_beta=0.1, lmr_max_beta=0.5, pmd_max_beta=0.75, hmr_min_beta=0.8, valley_max_beta=0.1, pmd_valley_min_width=5000,
                                          max_distance=500, min_num_cpgs=4, min_width=30, flank.width=300, flank.dist.max=5000,
                                          flank.num.cpgs=10, flank.beta.min=0.5, umr_large_width=500, umr_large_density=0.03,
                                          split.pmds=T, merge.pmds=T, drop=T, tol_val=0.01) {
@@ -174,6 +175,7 @@ segment_methylation_singlechr = function(data, ret, pmd_lambda2=1000, pmd_std_th
   # Call PMDs
   pmd_call[width>pmd_valley_min_width&width/(num.cpgs-1)<max_distance,is.admissible:=T]
   pmd_call[is.admissible==T&fused_std>=pmd_std_threshold&beta<pmd_max_beta,category:="PMD"]
+  pmd_call[is.admissible==T&fused_std>=pmd_std_threshold&beta>=hmr_min_beta,category:="HMR"]
   pmd_call[is.na(category),category:="other"]
   
   if ("segment_id"%in%names(pmd_call)) pmd_call[,segment_id:=NULL]
@@ -213,7 +215,7 @@ segment_methylation_singlechr = function(data, ret, pmd_lambda2=1000, pmd_std_th
   if (drop==T) {
     seg_call[,c("is.V","is.flank","flank.dist","is.sep","fused_std"):=NULL]
     seg_call = seg_call[!is.na(category)]
-    pmd_call = pmd_call[category=="PMD"]
+    pmd_call = pmd_call[category%in%c("PMD","HMR")]
   }
   # return
   segments=list(lmr_umr_valley=seg_call,pmd=pmd_call,ov=ov)
